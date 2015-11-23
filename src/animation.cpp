@@ -80,11 +80,11 @@ void animate_skin(Scene* scene) {
 				// update position and normal 
 				temp_pos = bone_w * transform_point(bone_xf, mesh_->skinning->rest_pos[v_index]);
 				temp_norm = bone_w * transform_normal(bone_xf, mesh_->skinning->rest_norm[v_index]);
+				mesh_->pos[v_index] += temp_pos;
+				mesh_->norm[v_index] += temp_norm;
 			}
-			// updating pos and normals
-			mesh_->pos[v_index] += temp_pos;
 			// normalize normal  
-			mesh_->norm[v_index] += normalize(temp_norm);
+			mesh_->norm[v_index] = normalize(mesh_->norm[v_index]);
 		}
 	}
 }
