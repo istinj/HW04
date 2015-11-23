@@ -52,15 +52,41 @@ void animate_frame(Scene* scene) {
 void animate_skin(Scene* scene) {
     // YOUR CODE GOES HERE ---------------------
     // foreach mesh
-        // if no skinning, continue
-        // foreach vertex index
-            // set pos/norm to zero
-            // for each bone slot (0..3)
-                // get bone weight and index
-                // if index < 0, continue
-                // grab bone xform
-                // update position and normal
-            // normalize normal
+	for (auto mesh_ : scene->meshes)
+	{
+		// if no skinning, continue
+		if (mesh_->skinning == nullptr)
+			continue;
+		// temp vectors for pos and norm
+		vec3f temp_pos, temp_norm;
+		// foreach vertex index
+		for (int v_index = 0; v_index < mesh_->pos.size(); v_index++)
+		{
+			// set pos/norm to zero
+			mesh_->pos[v_index] = zero3f;
+			mesh_->norm[v_index] = zero3f;
+			// for each bone slot (0..3)
+			for (int b_index = 0; b_index < 4; b_index++)
+			{
+				// get bone weight and index
+				int bone_id = mesh_->skinning->bone_ids.at(v_index)[b_index];
+				float bone_w = mesh_->skinning->bone_weights.at(v_index)[b_index];
+
+				// if index < 0, continue
+				if (bone_id < 0)
+					continue;
+				// grab bone xform
+				mat4f bone_xf = mesh_->skinning->bone_xforms[scene->animation->time][bone_id];
+				// update position and normal 
+				temp_pos = bone_w * transform_point(bone_xf, mesh_->skinning->rest_pos[v_index]);
+				temp_norm = bone_w * transform_normal(bone_xf, mesh_->skinning->rest_norm[v_index]);
+			}
+			// updating pos and normals
+			mesh_->pos[v_index] += temp_pos;
+			// normalize normal  
+			mesh_->norm[v_index] += normalize(temp_norm);
+		}
+	}
 }
 
 // particle simulation
