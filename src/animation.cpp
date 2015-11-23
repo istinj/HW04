@@ -22,13 +22,30 @@ frame3f animate_compute_frame(FrameAnimation* animation, int time) {
 // update mesh frames for animation
 void animate_frame(Scene* scene) {
     // YOUR CODE GOES HERE ---------------------
-    // foreach mesh
-        // if not animation, continue
-        // update frame
+	// foreach mesh
+	for (auto mesh_ : scene->meshes)
+	{
+		// if not animation, continue
+		if (mesh_->animation == nullptr)
+			continue;
+		// update frame 
+		frame3f new_frame_mesh = animate_compute_frame(mesh_->animation, scene->animation->time);
+		mesh_->frame = new_frame_mesh;
+	}
     // foreach surface
-        // if not animation, continue
-        // update frame
-        // update the _display_mesh
+	for (auto surf_ : scene->surfaces)
+	{
+		// if not animation, continue
+		if (surf_->animation == nullptr)
+			continue;
+
+		// update frame
+		frame3f new_frame_surf = animate_compute_frame(surf_->animation, scene->animation->time);
+		surf_->frame = new_frame_surf;
+
+		// update the _display_mesh 
+		surf_->_display_mesh->frame = new_frame_surf;
+	}
 }
 
 // skinning scene
@@ -105,6 +122,6 @@ void animate_update(Scene* scene) {
         else return;
     } else scene->animation->time ++;
     animate_frame(scene);
-    if(not scene->animation->gpu_skinning) animate_skin(scene);
+    if(! scene->animation->gpu_skinning) animate_skin(scene);
     simulate(scene);
 }
