@@ -93,33 +93,109 @@ void animate_skin(Scene* scene) {
 void simulate(Scene* scene) {
     // YOUR CODE GOES HERE ---------------------
     // for each mesh
-        // skip if no simulation
+	for (auto mesh_ : scene->meshes)
+	{
+		// skip if no simulation
+		if (mesh_->simulation == nullptr)
+			continue;
         // compute time per step
+		auto stepTime = scene->animation->dt / scene->animation->simsteps;
         // foreach simulation steps
-            // compute extenal forces (gravity)
+		for (int i = 0; i < scene->animation->simsteps; i++)
+		{
+			// compute extenal forces (gravity)
+			auto gravity = scene->animation->gravity;
+			mesh_->simulation->force[i] = mesh_->simulation->mass[i] * gravity;
             // for each spring, compute spring force on points
-                // compute spring distance and length
+			for (auto spring_ : mesh_->simulation->springs)
+			{
+				// compute spring distance and length
+				float l_r = spring_.restlength;
+				float l_s = length(mesh_->pos[spring_.ids.y] - mesh_->pos[spring_.ids.x]);
+				vec3f spr_dir = normalize(mesh_->pos[spring_.ids.y] - mesh_->pos[spring_.ids.x]);
                 // compute static force
+				vec3f static_F = spring_.ks * (l_s - l_r) * spr_dir;
                 // accumulate static force on points
-                // compute dynamic force
+				mesh_->simulation->force[spring_.ids.x] += static_F;
+				//mesh_->simulation->force[spring_.ids.y] -= static_F;
+				// compute dynamic force
+				vec3f v_s = mesh_->simulation->vel[spring_.ids.y] - mesh_->simulation->vel[spring_.ids.x];
+				vec3f dynamic_F = spring_.kd * dot(v_s, spr_dir) * spr_dir;
                 // accumulate dynamic force on points
-            // newton laws
-                // if pinned, skip
-                // acceleration
-                // update velocity and positions using Euler's method
-                // for each mesh, check for collision
-                    // compute inside tests
-                    // if quad
-                        // compute local poisition
-                        // perform inside test
-                            // if inside, set position and normal
-                        // else sphere
-                        // inside test
-                            // if inside, set position and normal
-                    // if inside
-                        // set particle position
-                        // update velocity
+				mesh_->simulation->force[spring_.ids.x] += dynamic_F;
+				mesh_->simulation->force[spring_.ids.y] += dynamic_F;
+			}
+            // newton laws 
+            // if pinned, skip
+			if (!mesh_->simulation->pinned[i])
+			{
+				// acceleration
+				vec3f vel = (mesh_->pos[i] - mesh_->simulation->init_pos[i]) / stepTime;
+				vec3f acc = (vel - mesh_->simulation->init_vel[i]) / stepTime;
+				// update velocity and positions using Euler's method
+				mesh_->pos[i] += ((vel * stepTime) + (acc * sqr(stepTime) * 0.5f));
+				mesh_->simulation->vel[i] += (acc * stepTime);
+				// for each mesh, check for collision
+				for (auto coll_ : scene->meshes)
+				{
+					// compute inside tests
+					// if quad
+					if (coll_->collision->isquad)
+					{
+						// compute local poisition
+						auto local_pos = transform_point_inverse(coll_->frame, coll_->pos[i]);
+						// perform inside test
+						if (local_pos.z < 0 &&
+							local_pos.x > -(coll_->collision->radius) &&
+							local_pos.x < (coll_->collision->radius) &&
+							local_pos.y > -(coll_->collision->radius) &&
+							local_pos.y < (coll_->collision->radius))
+						{
+							// if inside, set position and normal
+							coll_->pos[i] = transform_point(coll_->frame, vec3f(local_pos.x, local_pos.y, 0));
+							coll_->norm[i] = coll_->frame.z;
+							
+							// velocity update
+							vec3f v_prev = coll_->simulation->vel[i];
+							vec3f n_coll = coll_->norm[i];
+							float dump_p = scene->animation->bounce_dump.x;
+							float dump_o = scene->animation->bounce_dump.y;
+							coll_->simulation->vel[i] = ((v_prev - dot(n_coll, v_prev) * n_coll) * (1 - dump_p) +
+														((-1) * dot(n_coll, v_prev) * n_coll) * (1 - dump_p));
+						}
+					}
+					// else sphere
+					else
+					{
+						vec3f centre = coll_->frame.o;
+						float distance = length(coll_->pos[i] - centre);
+						// inside test
+						if (distance < coll_->collision->radius)
+						{
+							// if inside, set position and normal
+							coll_->pos[i] = (coll_->collision->radius * normalize(coll_->pos[i] - centre)) + centre;
+							coll_->norm[i] = normalize(coll_->pos[i] - centre);
+
+							// velocity update
+							vec3f v_prev = coll_->simulation->vel[i];
+							vec3f n_coll = coll_->norm[i];
+							float dump_p = scene->animation->bounce_dump.x;
+							float dump_o = scene->animation->bounce_dump.y;
+							coll_->simulation->vel[i] = ((v_prev - dot(n_coll, v_prev) * n_coll) * (1 - dump_p) +
+														((-1) * dot(n_coll, v_prev) * n_coll) * (1 - dump_p));
+						}
+					}	
+					// if inside
+						// set particle position
+						// update velocity
+				}
+			}
+		}
         // smooth normals if it has triangles or quads
+		if (mesh_->quad.size() != 0 || mesh_->triangle.size() != 0)
+			smooth_normals(mesh_);
+	}
+        
 }
 
 // scene reset
