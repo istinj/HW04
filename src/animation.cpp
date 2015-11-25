@@ -133,12 +133,14 @@ void simulate(Scene* scene) {
 				vec3f vel = (mesh_->pos[i] - mesh_->simulation->init_pos[i]) / stepTime;
 				vec3f acc = (vel - mesh_->simulation->init_vel[i]) / stepTime;
 				// update velocity and positions using Euler's method
-				mesh_->pos[i] += ((vel * stepTime) + (acc * sqr(stepTime) * 0.5f));
-				mesh_->simulation->vel[i] += (acc * stepTime);
+				mesh_->pos[i + stepTime] = mesh_->pos[i] + (vel * stepTime) + (acc * sqr(stepTime) * 0.5f);
+				mesh_->simulation->vel[i + stepTime] = mesh_->simulation->vel[i] + (acc * stepTime);
 				// for each mesh, check for collision
 				for (auto coll_ : scene->meshes)
 				{
 					// compute inside tests
+					if (coll_->collision == nullptr)
+						continue;
 					// if quad
 					if (coll_->collision->isquad)
 					{
