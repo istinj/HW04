@@ -28,10 +28,12 @@ void animate_frame(Scene* scene) {
 		// if not animation, continue
 		if (mesh_->animation == nullptr)
 			continue;
+
 		// update frame 
 		frame3f new_frame_mesh = animate_compute_frame(mesh_->animation, scene->animation->time);
 		mesh_->frame = new_frame_mesh;
 	}
+
     // foreach surface
 	for (auto surf_ : scene->surfaces)
 	{
@@ -57,14 +59,17 @@ void animate_skin(Scene* scene) {
 		// if no skinning, continue
 		if (mesh_->skinning == nullptr)
 			continue;
+
 		// temp vectors for pos and norm
 		vec3f temp_pos, temp_norm;
+
 		// foreach vertex index
 		for (int v_index = 0; v_index < mesh_->pos.size(); v_index++)
 		{
 			// set pos/norm to zero
 			mesh_->pos[v_index] = zero3f;
 			mesh_->norm[v_index] = zero3f;
+
 			// for each bone slot (0..3)
 			for (int b_index = 0; b_index < 4; b_index++)
 			{
@@ -75,14 +80,17 @@ void animate_skin(Scene* scene) {
 				// if index < 0, continue
 				if (bone_id < 0)
 					continue;
+
 				// grab bone xform
 				mat4f bone_xf = mesh_->skinning->bone_xforms[scene->animation->time][bone_id];
+
 				// update position and normal 
 				temp_pos = bone_w * transform_point(bone_xf, mesh_->skinning->rest_pos[v_index]);
 				temp_norm = bone_w * transform_normal(bone_xf, mesh_->skinning->rest_norm[v_index]);
 				mesh_->pos[v_index] += temp_pos;
 				mesh_->norm[v_index] += temp_norm;
 			}
+
 			// normalize normal  
 			mesh_->norm[v_index] = normalize(mesh_->norm[v_index]);
 		}
@@ -98,8 +106,10 @@ void simulate(Scene* scene) {
 		// skip if no simulation
 		if (mesh_->simulation == nullptr)
 			continue;
+
         // compute time per step
 		auto stepTime = scene->animation->dt / scene->animation->simsteps;
+
         // foreach simulation steps
 		for (int j = 0; j < scene->animation->simsteps; j++)
 		{
@@ -110,6 +120,7 @@ void simulate(Scene* scene) {
 			{
 				mesh_->simulation->force[k] = mesh_->simulation->mass[k] * gravity;
 			}
+
             // for each spring, compute spring force on points
 			for (auto spring_ : mesh_->simulation->springs)
 			{
@@ -117,14 +128,18 @@ void simulate(Scene* scene) {
 				float l_r = spring_.restlength;
 				float l_s = length(mesh_->pos[spring_.ids.y] - mesh_->pos[spring_.ids.x]);
 				vec3f spr_dir = normalize(mesh_->pos[spring_.ids.y] - mesh_->pos[spring_.ids.x]);
+
                 // compute static force
 				vec3f static_F = spring_.ks * (l_s - l_r) * spr_dir;
+
                 // accumulate static force on points
 				mesh_->simulation->force[spring_.ids.x] += static_F;
 				mesh_->simulation->force[spring_.ids.y] -= static_F;
+
 				// compute dynamic force
 				vec3f v_s = mesh_->simulation->vel[spring_.ids.y] - mesh_->simulation->vel[spring_.ids.x];
 				vec3f dynamic_F = spring_.kd * dot(v_s, spr_dir) * spr_dir;
+
                 // accumulate dynamic force on points
 				mesh_->simulation->force[spring_.ids.x] += dynamic_F;
 				mesh_->simulation->force[spring_.ids.y] -= dynamic_F;
@@ -137,9 +152,11 @@ void simulate(Scene* scene) {
 				{
 					// acceleration
 					vec3f acc = mesh_->simulation->force[i] / mesh_->simulation->mass[i];
+
 					// update velocity and positions using Euler's method
 					mesh_->pos[i] += (mesh_->simulation->vel[i] * stepTime) + (acc * sqr(stepTime) * 0.5f);
 					mesh_->simulation->vel[i] += acc * stepTime;
+
 					// for each mesh, check for collision
 					for (auto coll_ : scene->surfaces)
 					{
@@ -149,6 +166,7 @@ void simulate(Scene* scene) {
 						{
 							// compute local poisition
 							auto local_pos = transform_point_inverse(coll_->frame, mesh_->pos[i]);
+
 							// perform inside test
 							if (local_pos.z < 0 &&
 								local_pos.x > -(coll_->radius) &&
@@ -168,11 +186,13 @@ void simulate(Scene* scene) {
 									((-1) * dot(n_coll, v_prev) * n_coll) * (1 - dump_o));
 							}
 						}
+
 						// else sphere
 						else
 						{
 							vec3f centre = coll_->frame.o;
 							float distance = length(mesh_->pos[i] - centre);
+
 							// inside test
 							if (distance < coll_->radius)
 							{
@@ -191,11 +211,14 @@ void simulate(Scene* scene) {
 						// if inside
 						// set particle position
 						// update velocity
+
+						// Already done.
 					}
 				}
 				else continue;
 			}
 		}
+
         // smooth normals if it has triangles or quads
 		if (mesh_->quad.size() != 0 || mesh_->triangle.size() != 0)
 			smooth_normals(mesh_);
