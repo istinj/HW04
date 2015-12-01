@@ -139,26 +139,46 @@ void shade_mesh(Mesh* mesh, int time, bool wireframe, bool skinning_gpu, bool dr
     auto vertex_texcoord_location = glGetAttribLocation(state->gl_program_id, "vertex_texcoord");
     // YOUR CODE GOES HERE ---------------------
     // (only for extra credit)
+	auto u_skinning_bool_location = glGetUniformLocation(state->gl_program_id, "skin_enabled");
+	auto a_skin_bone_ids_location = glGetAttribLocation(state->gl_program_id, "vertex_skin_bone_ids");
+	auto a_skin_bone_weights_location = glGetAttribLocation(state->gl_program_id, "vertex_skin_bone_weights");
     
     glEnableVertexAttribArray(vertex_pos_location);
     glVertexAttribPointer(vertex_pos_location, 3, GL_FLOAT, GL_FALSE, 0, &mesh->pos[0].x);
     glEnableVertexAttribArray(vertex_norm_location);
     glVertexAttribPointer(vertex_norm_location, 3, GL_FLOAT, GL_FALSE, 0, &mesh->norm[0].x);
-    if(not mesh->texcoord.empty()) {
+    if(!mesh->texcoord.empty()) {
         glEnableVertexAttribArray(vertex_texcoord_location);
         glVertexAttribPointer(vertex_texcoord_location, 2, GL_FLOAT, GL_FALSE, 0, &mesh->texcoord[0].x);
     }
     else glVertexAttrib2f(vertex_texcoord_location, 0, 0);
     
-    if (mesh->skinning and skinning_gpu) {
+    if (mesh->skinning && skinning_gpu) {
         // YOUR CODE GOES HERE ---------------------
         // (only for extra credit)
+		glUniform1i(u_skinning_bool_location, true);
+
+		glEnableVertexAttribArray(a_skin_bone_ids_location);
+		glVertexAttribPointer(a_skin_bone_ids_location, 1, GL_INT, GL_FALSE, 0, &mesh->skinning->bone_ids[0].x);
+
+		glEnableVertexAttribArray(a_skin_bone_weights_location);
+		glVertexAttribPointer(a_skin_bone_weights_location, 4, GL_FLOAT, GL_FALSE, 0, &mesh->skinning->bone_weights[0].x);
+
+		// skin bone xforms vector
+		for (int k = 0; k < 48; k++)
+		{
+			string xform_string = "skin_bone_xforms[" + std::to_string(k) + "]";
+			auto u_xform_location = glGetUniformLocation(state->gl_program_id, (GLchar*)xform_string.c_str());
+
+			glUniformMatrix4fv(u_xform_location, 1, GL_TRUE, &mesh->skinning->bone_xforms[time][k][0].x);
+		}
+
     } else {
-        glUniform1i(glGetUniformLocation(state->gl_program_id,"skinning->enabled"),GL_FALSE);
+        glUniform1i(u_skinning_bool_location,GL_FALSE);
     }
     
     // draw triangles and quads
-    if(not wireframe) {
+    if(!wireframe) {
         if(mesh->triangle.size()) glDrawElements(GL_TRIANGLES, mesh->triangle.size()*3, GL_UNSIGNED_INT, &mesh->triangle[0].x);
         if(mesh->quad.size()) glDrawElements(GL_QUADS, mesh->quad.size()*4, GL_UNSIGNED_INT, &mesh->quad[0].x);
         if(mesh->point.size()) glDrawElements(GL_POINTS, mesh->point.size(), GL_UNSIGNED_INT, &mesh->point[0]);
@@ -172,10 +192,12 @@ void shade_mesh(Mesh* mesh, int time, bool wireframe, bool skinning_gpu, bool dr
     // disable vertex attribute arrays
     glDisableVertexAttribArray(vertex_pos_location);
     glDisableVertexAttribArray(vertex_norm_location);
-    if(not mesh->texcoord.empty()) glDisableVertexAttribArray(vertex_texcoord_location);
+    if(!mesh->texcoord.empty()) glDisableVertexAttribArray(vertex_texcoord_location);
     if(mesh->skinning) {
         // YOUR CODE GOES HERE ---------------------
         // (only for extra credit)
+		glDisableVertexAttribArray(a_skin_bone_ids_location);
+		glDisableVertexAttribArray(a_skin_bone_weights_location);
     }
     
     // draw normals if needed
@@ -282,11 +304,11 @@ void uiloop() {
     glfwSetCharCallback(window, [](GLFWwindow* window, unsigned int key) {
         switch (key) {
             case 's': scene->draw_captureimage = true; break;
-            case ' ': scene->draw_animated = not scene->draw_animated; break;
+            case ' ': scene->draw_animated = ! scene->draw_animated; break;
             case '.': animate_update(scene); break;
-            case 'g': scene->animation->gpu_skinning = not scene->animation->gpu_skinning; animate_reset(scene); break;
-            case 'n': scene->draw_normals = not scene->draw_normals; break;
-            case 'w': scene->draw_wireframe = not scene->draw_wireframe; break;
+            case 'g': scene->animation->gpu_skinning = ! scene->animation->gpu_skinning; animate_reset(scene); break;
+            case 'n': scene->draw_normals = ! scene->draw_normals; break;
+            case 'w': scene->draw_wireframe = ! scene->draw_wireframe; break;
         }
     });
     
@@ -308,7 +330,7 @@ void uiloop() {
     
     auto last_update_time = glfwGetTime();
     
-    while(not glfwWindowShouldClose(window)) {
+    while(! glfwWindowShouldClose(window)) {
         auto title = tostring("graphics14 | animate | %03d", scene->animation->time);
         glfwSetWindowTitle(window, title.c_str());
 
@@ -327,7 +349,7 @@ void uiloop() {
         if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT)) {
             double x, y;
             glfwGetCursorPos(window, &x, &y);
-            if (mouse_last_x < 0 or mouse_last_y < 0) { mouse_last_x = x; mouse_last_y = y; }
+            if (mouse_last_x < 0 || mouse_last_y < 0) { mouse_last_x = x; mouse_last_y = y; }
             auto delta_x = x - mouse_last_x, delta_y = y - mouse_last_y;
             
             set_view_turntable(scene->camera, delta_x*0.01, -delta_y*0.01, 0, 0, 0);
@@ -367,7 +389,7 @@ int main(int argc, char** argv) {
         args.object_element("image_filename").as_string() :
         scene_filename.substr(0,scene_filename.size()-5)+".png";
     scene = load_json_scene(scene_filename);
-    if(not args.object_element("resolution").is_null()) {
+    if(! args.object_element("resolution").is_null()) {
         scene->image_height = args.object_element("resolution").as_int();
         scene->image_width = scene->camera->width * scene->image_height / scene->camera->height;
     }
