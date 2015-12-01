@@ -1,4 +1,4 @@
-﻿Compilazione avviata 26/11/2015 11:29:21.
+﻿Compilazione avviata 30/11/2015 18:17:29.
      1>Progetto "C:\Users\Istin\Documents\Foundation of Computer Graphics\HW04\out (4)\animate.vcxproj" sul nodo 2 (destinazioni: Build).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Iext/w32/include /Zi /nologo /W3 /WX- /Ox /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _LIB /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS- /Gy /fp:precise /Za /Zc:wchar_t /Zc:forScope /Fo"build\Release\\" /Fd"build\Release\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt src\animation.cpp
@@ -30,4 +30,4 @@
 
 Compilazione completata.
 
-Tempo trascorso 00:00:04.96
+Tempo trascorso 00:00:06.89

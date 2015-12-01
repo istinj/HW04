@@ -138,8 +138,8 @@ void simulate(Scene* scene) {
 					// acceleration
 					vec3f acc = mesh_->simulation->force[i] / mesh_->simulation->mass[i];
 					// update velocity and positions using Euler's method
-					mesh_->simulation->vel[i] += acc * stepTime;
 					mesh_->pos[i] += (mesh_->simulation->vel[i] * stepTime) + (acc * sqr(stepTime) * 0.5f);
+					mesh_->simulation->vel[i] += acc * stepTime;
 					// for each mesh, check for collision
 					for (auto coll_ : scene->surfaces)
 					{
