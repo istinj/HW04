@@ -159,7 +159,7 @@ void shade_mesh(Mesh* mesh, int time, bool wireframe, bool skinning_gpu, bool dr
 		glUniform1i(u_skinning_bool_location, true);
 
 		glEnableVertexAttribArray(a_skin_bone_ids_location);
-		glVertexAttribPointer(a_skin_bone_ids_location, 1, GL_INT, GL_FALSE, 0, &mesh->skinning->bone_ids[0].x);
+		glVertexAttribPointer(a_skin_bone_ids_location, 4, GL_INT, GL_FALSE, 0, &mesh->skinning->bone_ids[0].x);
 
 		glEnableVertexAttribArray(a_skin_bone_weights_location);
 		glVertexAttribPointer(a_skin_bone_weights_location, 4, GL_FLOAT, GL_FALSE, 0, &mesh->skinning->bone_weights[0].x);
