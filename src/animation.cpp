@@ -144,6 +144,7 @@ void simulate(Scene* scene) {
 				mesh_->simulation->force[spring_.ids.x] += dynamic_F;
 				mesh_->simulation->force[spring_.ids.y] -= dynamic_F;
 			}
+
             // newton laws 
             // if pinned, skip
 			for (int i = 0; i < mesh_->pos.size(); i++)

@@ -137,6 +137,7 @@ void shade_mesh(Mesh* mesh, int time, bool wireframe, bool skinning_gpu, bool dr
     auto vertex_pos_location = glGetAttribLocation(state->gl_program_id, "vertex_pos");
     auto vertex_norm_location = glGetAttribLocation(state->gl_program_id, "vertex_norm");
     auto vertex_texcoord_location = glGetAttribLocation(state->gl_program_id, "vertex_texcoord");
+
     // YOUR CODE GOES HERE ---------------------
     // (only for extra credit)
 	auto u_skinning_bool_location = glGetUniformLocation(state->gl_program_id, "skin_enabled");
@@ -154,6 +155,7 @@ void shade_mesh(Mesh* mesh, int time, bool wireframe, bool skinning_gpu, bool dr
     else glVertexAttrib2f(vertex_texcoord_location, 0, 0);
     
     if (mesh->skinning && skinning_gpu) {
+
         // YOUR CODE GOES HERE ---------------------
         // (only for extra credit)
 		glUniform1i(u_skinning_bool_location, true);
@@ -194,6 +196,7 @@ void shade_mesh(Mesh* mesh, int time, bool wireframe, bool skinning_gpu, bool dr
     glDisableVertexAttribArray(vertex_norm_location);
     if(!mesh->texcoord.empty()) glDisableVertexAttribArray(vertex_texcoord_location);
     if(mesh->skinning) {
+
         // YOUR CODE GOES HERE ---------------------
         // (only for extra credit)
 		glDisableVertexAttribArray(a_skin_bone_ids_location);
